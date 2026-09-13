@@ -1,0 +1,14 @@
+# Example deployment manifest for the PolyCite verifier surface.
+# Secrets are provisioned out-of-band; see README "Hosted verification".
+name = "polycite-verifier"
+main = "dist/index.js"
+compatibility_date = "2026-09-01"
+
+# Public (non-secret) bindings:
+#   PC_PUBLIC_CONFIG  = J({version:"pc-worker-config-1", contract, receipt_keys, log_sample_ppm})
+# Secret bindings (wrangler secret / deployment tooling only):
+#   PC_SIGNING_SEED   = canonical unpadded base64url 32-byte Ed25519 seed
+#   PC_SIGNING_KEY_ID = pck_… selecting one nonrevoked published receipt key
+#   PC_AUTH_BINDINGS  = JSON array of {token_sha256, tenant_id, scopes}
+# Neither the fixture seeds nor the all-zero test bearer are accepted here;
+# test material is refused unless the harness testMode flag is set in-process.

@@ -1,0 +1,28 @@
+{
+  "name": "polycite",
+  "version": "1.0.0",
+  "description": "PolyCite CLI: offline check, retrieval sealing, artifact inspection, rendering, hosted batch client",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "polycite": "./dist/main.js"
+  },
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "files": ["dist"],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@latticeag/polycite": "workspace:*",
+    "@latticeag/polycite-core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

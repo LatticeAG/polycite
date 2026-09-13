@@ -1,0 +1,33 @@
+# --- LatticeAG spec/prompt material (never committed) ---
+SPEC*.md
+*EXTREME*.md
+PROMPT*.md
+REVIEW*.md
+FIX_PROMPT*
+SELFREVIEW*
+DRAFT*
+REPORT.md
+INTERFACES.md
+STATUS*
+
+# --- build outputs ---
+node_modules/
+dist/
+*.tsbuildinfo
+
+# --- python ---
+.venv/
+__pycache__/
+*.pyc
+
+# --- generated test fixtures ---
+tests/interop/fixtures/
+tests/fixtures/*.key
+tests/fixtures/*.pub.json
+tests/fixtures/out/
+
+# --- misc ---
+.DS_Store
+coverage/
+*.log
+BUILD_PROMPT.md

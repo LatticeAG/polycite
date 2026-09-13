@@ -1,0 +1,33 @@
+{
+  "name": "polycite-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PolyCite — machine-checkable citation boundary for generated answers (LatticeAG)",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r --sort run build",
+    "clean": "pnpm -r run clean",
+    "pretest": "pnpm run build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "test:workers": "pnpm run build && vitest run tests/conformance/worker.test.ts",
+    "test:conformance": "pnpm run build && vitest run tests/conformance",
+    "test:interop": "pnpm run fixtures && python3 -m unittest discover -s tests/interop -v",
+    "fixtures": "pnpm run build && node tests/fixtures/gen.mjs",
+    "bench:gate": "pnpm run build && node tests/bench/gate.mjs",
+    "polycite": "node packages/cli/dist/main.js"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.0",
+    "@vitest/coverage-v8": "2.1.9",
+    "eslint": "9.39.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.0",
+    "vitest": "2.1.9"
+  }
+}
