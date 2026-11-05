@@ -412,12 +412,12 @@ export async function dispatch(argv: string[], io: Io): Promise<number> {
     const callerConfig = resolve(io.callerCwd, "polycite.json");
     if (existsSync(callerConfig)) args.flags.set("config", callerConfig);
   }
-  if (flagOn(args.flags, "help") || args.command.length === 0) {
-    io.stdout(USAGE);
-    return 0;
-  }
   if (flagOn(args.flags, "version")) {
     io.stdout(VERSION + "\n");
+    return 0;
+  }
+  if (flagOn(args.flags, "help") || args.command.length === 0) {
+    io.stdout(USAGE);
     return 0;
   }
   const cmd = args.command.join(" ");
