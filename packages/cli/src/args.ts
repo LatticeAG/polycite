@@ -29,7 +29,10 @@ export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>)
 
   for (; i < argv.length; i++) {
     const a = argv[i]!;
-    if (!a.startsWith("--")) throw new UsageError(`unexpected positional argument: ${a}`);
+    if (!a.startsWith("--")) {
+      if (command.length === 0) throw new UsageError(`place the subcommand first: polycite ${a} ... --config FILE`);
+      throw new UsageError(`unexpected positional argument: ${a}`);
+    }
     const eq = a.indexOf("=");
     const name = a.slice(2, eq === -1 ? undefined : eq);
     if (!allowed.has(name)) throw new UsageError(`unknown flag: --${name}`);
