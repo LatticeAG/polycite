@@ -34,7 +34,9 @@ which verifier emitted the decision. PolyCite never advertises an unqualified
 ## Quick start
 
 Run this from the repository root after cloning. It builds the packages and runs
-an isolated local ceremony with two separate signing keys:
+an isolated local ceremony with two separate signing keys. Hosted verification
+and worker batch requests are outside the scope of this local quickstart; the
+worker surface can be exercised with `pnpm run test:workers`:
 
 ```bash
 pnpm install && pnpm build
