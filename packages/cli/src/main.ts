@@ -10,6 +10,7 @@ const io = {
   jsonMode,
   quiet: process.argv.slice(2).includes("--quiet"),
   cwd: process.cwd(),
+  callerCwd: process.env.INIT_CWD,
 };
 
 try {

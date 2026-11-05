@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   base64urlEncode,
   canonicalize,
@@ -47,6 +49,7 @@ export interface Io {
   jsonMode: boolean;
   quiet: boolean;
   cwd: string;
+  callerCwd?: string;
 }
 
 function emit(io: Io, e: JsonError): void {
@@ -405,6 +408,10 @@ const SPEC: Record<string, Set<string>> = {
 
 export async function dispatch(argv: string[], io: Io): Promise<number> {
   const args = parseArgs(argv, SPEC);
+  if (!args.flags.has("config") && io.callerCwd) {
+    const callerConfig = resolve(io.callerCwd, "polycite.json");
+    if (existsSync(callerConfig)) args.flags.set("config", callerConfig);
+  }
   if (flagOn(args.flags, "help") || args.command.length === 0) {
     io.stdout(USAGE);
     return 0;

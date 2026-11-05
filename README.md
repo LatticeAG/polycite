@@ -80,6 +80,11 @@ JS
 node "$PC" check --input request.json --json --out package.json
 ```
 
+Config precedence is an explicit `--config FILE` (relative to the CLI process
+working directory), then `polycite.json` in the invoking directory when pnpm
+sets `INIT_CWD`, then `polycite.json` in the CLI process working directory.
+Other relative input and output paths use the CLI process working directory.
+
 The generated `polycite.json` contains the contract, trusted public keys and
 local receipt signer. The example snapshot expires after 900 seconds; refresh
 its `retrieved_at`, seal it again, and update the request before checking later.
