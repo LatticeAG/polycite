@@ -15,6 +15,17 @@ export interface ParsedArgs {
 const GLOBAL_FLAGS = new Set(["config", "json", "quiet", "help", "version"]);
 
 export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>): ParsedArgs {
+  // Move leading global flags behind the command path before validating flags.
+  const leading: string[] = [];
+  let start = 0;
+  while (start < argv.length && argv[start]!.startsWith("--")) {
+    const token = argv[start++]!;
+    leading.push(token);
+    if (token === "--config" && start < argv.length && !argv[start]!.startsWith("--")) leading.push(argv[start++]!);
+  }
+  let end = start;
+  while (end < argv.length && !argv[end]!.startsWith("--")) end++;
+  argv = [...argv.slice(start, end), ...leading, ...argv.slice(end)];
   const command: string[] = [];
   const flags = new Map<string, string | true>();
   let i = 0;
@@ -29,7 +40,10 @@ export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>)
 
   for (; i < argv.length; i++) {
     const a = argv[i]!;
-    if (!a.startsWith("--")) throw new UsageError(`unexpected positional argument: ${a}`);
+    if (!a.startsWith("--")) {
+      if (command.length === 0) throw new UsageError(`place the subcommand first: polycite ${a} ... --config FILE`);
+      throw new UsageError(`unexpected positional argument: ${a}`);
+    }
     const eq = a.indexOf("=");
     const name = a.slice(2, eq === -1 ? undefined : eq);
     if (!allowed.has(name)) throw new UsageError(`unknown flag: --${name}`);
@@ -45,7 +59,7 @@ export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>)
       value = a.slice(eq + 1);
     } else {
       i++;
-      if (i >= argv.length) throw new UsageError(`missing value for --${name}`);
+      if (i >= argv.length || argv[i]!.startsWith("--")) throw new UsageError(`missing value for --${name}`);
       value = argv[i]!;
     }
     flags.set(name, value);

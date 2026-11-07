@@ -3,7 +3,7 @@ import { U } from "./bytes.js";
 import { fail, invariant } from "./errors.js";
 import { parseFact, stripTerminal } from "./grammar.js";
 import { splitCandidates, splitComponents, type Candidate } from "./split.js";
-import { alignFact, buildSourceIndex, type SourceIndex } from "./align.js";
+import { summarizeFact, buildSourceIndex, type SourceIndex } from "./align.js";
 import type { AtomResult, ClaimResult, Hash, Link, Retrieval, Source } from "./types.js";
 
 /**
@@ -42,26 +42,16 @@ function evalAtom(
       totals: { supports: 0, contradicts: 0 },
     };
   }
-  const m = alignFact(idx, parsed.fact);
-  const totalS = m.supports.length;
-  const totalC = m.contradicts.length;
+  const m = summarizeFact(idx, parsed.fact, RETAIN_LINKS);
+  const totalS = m.totalSupports;
+  const totalC = m.totalContradicts;
 
-  const toLink = (relation: "supports" | "contradicts") =>
-    m[relation === "supports" ? "supports" : "contradicts"]
-      .map(
-        (p): Link => ({
-          relation,
-          source_id: p.source.source_id,
-          span: p.span,
-          content_hash: p.source.content_hash,
-          retrieval_hash: retrievalHash,
-        }),
-      )
-      .sort(
-        (a, b) =>
-          a.source_id < b.source_id ? -1 : a.source_id > b.source_id ? 1 : a.span.start - b.span.start || a.span.end - b.span.end,
-      )
-      .slice(0, RETAIN_LINKS);
+  // The source index is ordered once, so each relation retains its first links.
+  const toLink = (relation: "supports" | "contradicts"): Link[] =>
+    m[relation].slice(0, RETAIN_LINKS).map((p) => ({
+      relation, source_id: p.source.source_id, span: p.span,
+      content_hash: p.source.content_hash, retrieval_hash: retrievalHash,
+    }));
 
   const links = [...toLink("supports"), ...toLink("contradicts")];
 

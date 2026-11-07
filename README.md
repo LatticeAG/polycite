@@ -33,12 +33,63 @@ which verifier emitted the decision. PolyCite never advertises an unqualified
 
 ## Quick start
 
-```console
-$ pnpm install && pnpm build
-$ polycite keygen --out ./private/retriever.key --public-out ./retriever.pub.json
-$ polycite seal --input ./body.json --key ./private/retriever.key --out ./retrieval.json
-$ polycite check --input ./request.json --json
+Run this from the repository root after cloning. It builds the packages and runs
+an isolated local ceremony with two separate signing keys. Hosted verification
+and worker batch requests are outside the scope of this local quickstart; the
+worker surface can be exercised with `pnpm run test:workers`:
+
+```bash
+pnpm install && pnpm build
+REPO="$PWD"
+WORK="$(mktemp -d "$REPO/quickstart.XXXXXX")"
+cd "$WORK"
+mkdir private
+PC="$REPO/packages/cli/dist/main.js"
+CORE="$REPO/packages/core/dist/index.js"
+export CORE
+node "$PC" keygen --out private/retriever.key --public-out retriever.pub.json
+node "$PC" keygen --out private/receipt.key --public-out receipt.pub.json
+node --input-type=module <<'JS'
+import { readFileSync, writeFileSync } from 'node:fs';
+const { hashHex, nowUtcTime } = await import(process.env.CORE);
+const retriever = JSON.parse(readFileSync('retriever.pub.json'));
+const receipt = JSON.parse(readFileSync('receipt.pub.json'));
+const tenant_id = 'pct_LLLLLLLLLLLLLLLLLLLLL';
+const text = 'Acme is a company.';
+const contract = { version:'pc-contract-1', delivery:'block', rewrite:'off',
+  max_age_s:900, future_skew_s:60, splitter:'pc-split-1', grammar:'pc-en-1',
+  retrieval_keys:[{ ...retriever, authorities:['acme'] }] };
+const config = { version:'pc-config-1', tenant_id, contract, receipt_keys:[receipt],
+  local_signer:{ key_id:receipt.key_id, seed_file:'./private/receipt.key' }, hosted:null };
+const body = { version:'pc-retrieval-1', audience:tenant_id, retrieved_at:nowUtcTime(),
+  sources:[{ source_id:'pcs_AAAAAAAAAAAAAAAAAAAAA', kind:'text', authority:'acme',
+    role:'primary', origin:'urn:acme:filing:2025', extraction:'standalone', text,
+    content_hash:await hashHex(new TextEncoder().encode(text)) }] };
+writeFileSync('polycite.json', JSON.stringify(config, null, 2));
+writeFileSync('body.json', JSON.stringify(body, null, 2));
+JS
+node "$PC" config check
+node "$PC" seal --input body.json --key private/retriever.key --out retrieval.json --quiet
+node --input-type=module <<'JS'
+import { readFileSync, writeFileSync } from 'node:fs';
+const { hashHex, J } = await import(process.env.CORE);
+const config = JSON.parse(readFileSync('polycite.json'));
+const request = { version:'pc-request-1', run_id:'pcr_RRRRRRRRRRRRRRRRRRRRR',
+  contract_hash:await hashHex(J(config.contract)), format:'plain', language:'en',
+  draft:'Acme is a company.', retrieval:JSON.parse(readFileSync('retrieval.json')) };
+writeFileSync('request.json', JSON.stringify(request, null, 2));
+JS
+node "$PC" check --input request.json --json --out package.json
 ```
+
+Config precedence is an explicit `--config FILE` (relative to the CLI process
+working directory), then `polycite.json` in the invoking directory when pnpm
+sets `INIT_CWD`, then `polycite.json` in the CLI process working directory.
+Other relative input and output paths use the CLI process working directory.
+
+The generated `polycite.json` contains the contract, trusted public keys and
+local receipt signer. The example snapshot expires after 900 seconds; refresh
+its `retrieved_at`, seal it again, and update the request before checking later.
 
 - `check` exits `0` (release), `10` (annotated) or `11` (blocked) and always
   emits the full signed audit package.
