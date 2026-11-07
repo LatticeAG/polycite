@@ -15,6 +15,17 @@ export interface ParsedArgs {
 const GLOBAL_FLAGS = new Set(["config", "json", "quiet", "help", "version"]);
 
 export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>): ParsedArgs {
+  // Move leading global flags behind the command path before validating flags.
+  const leading: string[] = [];
+  let start = 0;
+  while (start < argv.length && argv[start]!.startsWith("--")) {
+    const token = argv[start++]!;
+    leading.push(token);
+    if (token === "--config" && start < argv.length) leading.push(argv[start++]!);
+  }
+  let end = start;
+  while (end < argv.length && !argv[end]!.startsWith("--")) end++;
+  argv = [...argv.slice(start, end), ...leading, ...argv.slice(end)];
   const command: string[] = [];
   const flags = new Map<string, string | true>();
   let i = 0;
