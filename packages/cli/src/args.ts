@@ -21,7 +21,7 @@ export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>)
   while (start < argv.length && argv[start]!.startsWith("--")) {
     const token = argv[start++]!;
     leading.push(token);
-    if (token === "--config" && start < argv.length) leading.push(argv[start++]!);
+    if (token === "--config" && start < argv.length && !argv[start]!.startsWith("--")) leading.push(argv[start++]!);
   }
   let end = start;
   while (end < argv.length && !argv[end]!.startsWith("--")) end++;
@@ -59,7 +59,7 @@ export function parseArgs(argv: string[], flagSpec: Record<string, Set<string>>)
       value = a.slice(eq + 1);
     } else {
       i++;
-      if (i >= argv.length) throw new UsageError(`missing value for --${name}`);
+      if (i >= argv.length || argv[i]!.startsWith("--")) throw new UsageError(`missing value for --${name}`);
       value = argv[i]!;
     }
     flags.set(name, value);
