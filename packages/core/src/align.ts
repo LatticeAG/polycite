@@ -69,6 +69,11 @@ export function buildSourceIndex(sources: Source[]): SourceIndex {
       }
     }
   }
+  for (const matches of idx.eligible.values()) {
+    matches.sort((a, b) => a.source.source_id < b.source.source_id ? -1 :
+      a.source.source_id > b.source.source_id ? 1 :
+      a.span.start - b.span.start || a.span.end - b.span.end);
+  }
   return idx;
 }
 

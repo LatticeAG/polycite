@@ -101,6 +101,7 @@ async function bench(label, draftBytes, sourceTexts, iters, p95Target) {
   // warmup
   for (let i = 0; i < 3; i++) await runCheck(req, { ...ctx, next_entry_id: nanoidEntryIds() });
   const times = [];
+  globalThis.gc?.();
   const heapBefore = process.memoryUsage().heapUsed;
   for (let i = 0; i < iters; i++) {
     const t0 = performance.now();
