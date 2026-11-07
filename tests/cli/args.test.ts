@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseArgs } from "../../packages/cli/src/args.js";
 
@@ -21,5 +24,17 @@ describe("CLI arguments", () => {
 
   it("rejects a flag where a config value is required", () => {
     expect(() => parseArgs(["check", "--config", "--json"], {})).toThrow("missing value for --config");
+  });
+
+  it("finds the invoking directory config through pnpm", () => {
+    const dir = mkdtempSync(join(tmpdir(), "polycite-caller-"));
+    try {
+      writeFileSync(join(dir, "polycite.json"), "{}");
+      expect(() => execFileSync("pnpm", ["polycite", "config", "check"], {
+        env: { ...process.env, INIT_CWD: dir }, encoding: "utf8", stdio: "pipe",
+      })).toThrow(/config invalid/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

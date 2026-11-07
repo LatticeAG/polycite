@@ -12,7 +12,7 @@ function callerCwd(): string | undefined {
       const shellStat = readFileSync(`/proc/${process.ppid}/stat`, "utf8");
       const parent = Number(shellStat.slice(shellStat.lastIndexOf(")") + 2).split(" ")[1]);
       const cmd = readFileSync(`/proc/${parent}/cmdline`, "utf8").split("\0");
-      if (cmd.some((part) => /(?:^|\/)pnpm(?:\.cjs)?$/.test(part))) {
+      if (cmd.some((part) => /(?:^|\/)pnpm(?:\.cjs|\.js)?$/.test(part))) {
         const entry = readFileSync(`/proc/${parent}/environ`, "utf8").split("\0")
           .find((part) => part.startsWith("INIT_CWD="));
         if (entry) return entry.slice("INIT_CWD=".length);
