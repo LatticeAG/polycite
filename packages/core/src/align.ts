@@ -24,6 +24,11 @@ export interface SourceIndex {
   secondary: Set<string>;
   /** matchKey -> true when any primary+contextual source has a matching paragraph. */
   contextual: Set<string>;
+  byValue: Map<string, Map<string, ParaMatch[]>>;
+}
+
+function valueKey(f: Fact): string {
+  return f.kind === "numeric" ? `${f.value.neg}:${f.value.coeff}:${f.value.scale}` : String(f.negative);
 }
 
 interface RawPara {
@@ -52,7 +57,7 @@ function paragraphs(text: string): RawPara[] {
 }
 
 export function buildSourceIndex(sources: Source[]): SourceIndex {
-  const idx: SourceIndex = { eligible: new Map(), secondary: new Set(), contextual: new Set() };
+  const idx: SourceIndex = { eligible: new Map(), secondary: new Set(), contextual: new Set(), byValue: new Map() };
   for (const s of sources) {
     for (const para of paragraphs(s.text)) {
       const parsed = parseFact(stripTerminal(para.text));
@@ -73,8 +78,36 @@ export function buildSourceIndex(sources: Source[]): SourceIndex {
     matches.sort((a, b) => a.source.source_id < b.source.source_id ? -1 :
       a.source.source_id > b.source.source_id ? 1 :
       a.span.start - b.span.start || a.span.end - b.span.end);
+    for (const match of matches) {
+      const key = matchKey(match.fact);
+      let groups = idx.byValue.get(key);
+      if (!groups) idx.byValue.set(key, groups = new Map());
+      const value = valueKey(match.fact);
+      let group = groups.get(value);
+      if (!group) groups.set(value, group = []);
+      group.push(match);
+    }
   }
   return idx;
+}
+
+/** Count all matches while retaining only the first links needed by evaluation. */
+export function summarizeFact(idx: SourceIndex, fact: Fact, limit: number) {
+  const key = matchKey(fact);
+  const all = idx.eligible.get(key) ?? [];
+  const same = idx.byValue.get(key)?.get(valueKey(fact)) ?? [];
+  const contradicts: ParaMatch[] = [];
+  if (same.length !== all.length && limit > 0) {
+    for (const match of all) {
+      if (!factsAgree(fact, match.fact)) contradicts.push(match);
+      if (contradicts.length === limit) break;
+    }
+  }
+  return {
+    supports: same.slice(0, limit), contradicts,
+    totalSupports: same.length, totalContradicts: all.length - same.length,
+    matchingSecondary: idx.secondary.has(key), matchingContextual: idx.contextual.has(key),
+  };
 }
 
 export interface AlignResult {

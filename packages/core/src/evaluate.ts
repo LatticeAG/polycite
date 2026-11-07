@@ -3,7 +3,7 @@ import { U } from "./bytes.js";
 import { fail, invariant } from "./errors.js";
 import { parseFact, stripTerminal } from "./grammar.js";
 import { splitCandidates, splitComponents, type Candidate } from "./split.js";
-import { alignFact, buildSourceIndex, type SourceIndex } from "./align.js";
+import { summarizeFact, buildSourceIndex, type SourceIndex } from "./align.js";
 import type { AtomResult, ClaimResult, Hash, Link, Retrieval, Source } from "./types.js";
 
 /**
@@ -42,9 +42,9 @@ function evalAtom(
       totals: { supports: 0, contradicts: 0 },
     };
   }
-  const m = alignFact(idx, parsed.fact);
-  const totalS = m.supports.length;
-  const totalC = m.contradicts.length;
+  const m = summarizeFact(idx, parsed.fact, RETAIN_LINKS);
+  const totalS = m.totalSupports;
+  const totalC = m.totalContradicts;
 
   // The source index is ordered once, so each relation retains its first links.
   const toLink = (relation: "supports" | "contradicts"): Link[] =>
