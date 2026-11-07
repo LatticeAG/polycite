@@ -19,7 +19,7 @@
     "test:conformance": "pnpm run build && vitest run tests/conformance",
     "test:interop": "pnpm run fixtures && python3 -m unittest discover -s tests/interop -v",
     "fixtures": "pnpm run build && node tests/fixtures/gen.mjs",
-    "bench:gate": "pnpm run build && node tests/bench/gate.mjs",
+    "bench:gate": "pnpm run build && node --expose-gc tests/bench/gate.mjs",
     "polycite": "node packages/cli/dist/main.js"
   },
   "devDependencies": {

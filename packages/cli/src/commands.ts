@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   base64urlEncode,
   canonicalize,
@@ -47,10 +49,18 @@ export interface Io {
   jsonMode: boolean;
   quiet: boolean;
   cwd: string;
+  callerCwd?: string;
 }
 
+const REMEDIATION: Partial<Record<JsonError["error"]["code"], string>> = {
+  STALE_RETRIEVAL: "The snapshot is older than the contract allows. Refresh the source and retrieved_at, run polycite seal again, and replace retrieval in the request before polycite check.",
+  BAD_RETRIEVAL_HASH: "The snapshot no longer matches its signed hash. Restore the original or run polycite seal on the correct body, then replace retrieval in the request before polycite check.",
+  UNTRUSTED_RETRIEVER: "The retrieval key is unknown, revoked, or outside its validity window. Check the contract key and snapshot time; use a currently trusted retriever to refresh the snapshot, run polycite seal, and update the request before polycite check.",
+};
+
 function emit(io: Io, e: JsonError): void {
-  io.stderr(io.jsonMode ? canonicalize(e) : `polycite: ${e.error.code} at ${e.error.path}`);
+  const detail = REMEDIATION[e.error.code];
+  io.stderr(io.jsonMode ? canonicalize(e) : `polycite: ${e.error.code} at ${e.error.path}${detail ? `\n${detail}` : ""}`);
 }
 
 function emitMsg(io: Io, message: string): void {
@@ -405,12 +415,16 @@ const SPEC: Record<string, Set<string>> = {
 
 export async function dispatch(argv: string[], io: Io): Promise<number> {
   const args = parseArgs(argv, SPEC);
-  if (flagOn(args.flags, "help") || args.command.length === 0) {
-    io.stdout(USAGE);
-    return 0;
+  if (!args.flags.has("config") && io.callerCwd) {
+    const callerConfig = resolve(io.callerCwd, "polycite.json");
+    if (existsSync(callerConfig)) args.flags.set("config", callerConfig);
   }
   if (flagOn(args.flags, "version")) {
     io.stdout(VERSION + "\n");
+    return 0;
+  }
+  if (flagOn(args.flags, "help") || args.command.length === 0) {
+    io.stdout(USAGE);
     return 0;
   }
   const cmd = args.command.join(" ");

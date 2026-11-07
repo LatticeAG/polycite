@@ -19,8 +19,14 @@ export async function sha256(data: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(d);
 }
 
-export async function hashHex(data: Uint8Array): Promise<Hash> {
-  return hexEncode(await sha256(data));
+export function hashHex(data: Uint8Array): Promise<Hash> {
+  const result = sha256(data).then(hexEncode);
+  const misuse = (): never => { throw new TypeError("hashHex returns a Promise; await hashHex(...) before using or serializing the hash"); };
+  Object.defineProperties(result, {
+    toJSON: { value: misuse },
+    [Symbol.toPrimitive]: { value: misuse },
+  });
+  return result;
 }
 
 export async function hashUtf8(s: string): Promise<Hash> {
